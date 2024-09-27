@@ -8,7 +8,9 @@ use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -18,7 +20,7 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-folder';
 
     public static function form(Form $form): Form
     {
@@ -39,19 +41,31 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultGroup('parent.name')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Category Name')
                     ->description(fn (Category $record): string => $record->description ?? '')
-                    ->searchable(),
+                    ->searchable()
+                    ->weight(function ($record) {
+                        return is_null($record->parent_id) ? 'bold' : 'normal';
+                    })
+                    ->color(function ($record) {
+                        return $record->parent_id ? '' : 'primary';
+                    })
+                    ->size(function ($record){
+                        return $record->parent_id? 'sm' : 'large';
+                    })
+                    ->disabledClick(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('User Name')
-                    ->searchable(),
+                    ->searchable()
+                    ->disabledClick(),
                 Tables\Columns\TextColumn::make('parent.name')
                     ->badge()
                     ->label('Parent')
-                    ->sortable(),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable()
+                    ->disabledClick(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
@@ -68,6 +82,19 @@ class CategoryResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
+            ->query(function (Category $category) {
+                $parents = Category::whereNull('parent_id')->get();
+                $orderedCategories = [];
+                
+                foreach ($parents as $parent) {
+                    $orderedCategories[] = $parent;
+                    $children = Category::where('parent_id', $parent->id)->get();
+                    foreach ($children as $child) {
+                        $orderedCategories[] = $child;
+                    }
+                }
+                return $category->whereIn('id', collect($orderedCategories)->pluck('id'));
+            })
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
