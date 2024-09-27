@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class CategoryResource extends Resource
 {
@@ -26,7 +27,7 @@ class CategoryResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Select::make('parent_id')
                     ->label('Parent')
-                    ->options(Category::whereNull('parent_id')->pluck('name', 'id'))
+                    ->options(Category::where('user_id', Auth::user()->id)->whereNull('parent_id')->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
@@ -41,6 +42,7 @@ class CategoryResource extends Resource
                     ->label('Category Name')
                     ->description(fn ($record) => $record->description)
                     ->searchable()
+                    ->size(fn ($record) => is_null($record->parent_id) ? 'lg' : 'sm')
                     ->weight(fn ($record) => is_null($record->parent_id) ? 'bold' : 'normal')
                     ->color(fn ($record) => is_null($record->parent_id) ? 'primary' : ''),
                 Tables\Columns\TextColumn::make('parent.name')
@@ -49,7 +51,8 @@ class CategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
@@ -57,6 +60,7 @@ class CategoryResource extends Resource
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 return $query
+                    ->where('user_id', Auth::user()->id)
                     ->with('children')
                     ->orderByRaw('IF(parent_id IS NULL, id, parent_id), id');
             })
