@@ -12,6 +12,13 @@ class ManageAccounts extends ManageRecords
 {
     protected static string $resource = AccountResource::class;
 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AccountResource\Widgets\AccountData::class,
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
