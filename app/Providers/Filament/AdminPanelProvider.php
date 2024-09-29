@@ -18,6 +18,9 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Pages\Auth\Register;
+use App\Filament\Pages\Dashboard;
+use App\Filament\Resources\AccountResource\Widgets\AccountData;
+use Illuminate\Support\Facades\App;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -25,22 +28,24 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->id('admin')
-            ->path('admin')
+            ->id('dashboard')
+            ->path('dashboard')
             ->login()
             ->registration(Register::class)
             ->colors([
                 'primary' => Color::Emerald,
             ])
+            ->font('Poppins')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
+            ->topNavigation()
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                AccountData::class,
+                // Widgets\AccountWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -57,4 +62,5 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ]);
     }
+
 }
