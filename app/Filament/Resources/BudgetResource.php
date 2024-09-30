@@ -9,6 +9,7 @@ use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,11 +38,15 @@ class BudgetResource extends Resource
                     ->label('Amount Now')
                     ->required()
                     ->numeric()
+                    ->live()
+                    ->prefix('Rp. ')
                     ->default(0),
                 Forms\Components\TextInput::make('amount_target')
                     ->label('Amount Target')
                     ->required()
                     ->numeric()
+                    ->live()
+                    ->prefix('Rp. ')
                     ->default(0),
                 Forms\Components\DatePicker::make('start_at')
                     ->label('Start Date'),
@@ -72,10 +77,12 @@ class BudgetResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_at')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('end_at')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
@@ -92,6 +99,9 @@ class BudgetResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
+            ->modifyQueryUsing(function (Builder $query) {
+                return $query->where('user_id', Auth::user()->id);
+            })
             ->actions([
                 // Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
